@@ -6,6 +6,8 @@ pipeline {
         MAVEN_HOME = tool 'maven-3.9.6'
         // Ajout du chemin vers Maven dans le PATH
         PATH = "${MAVEN_HOME}/bin:${env.PATH}"
+        SCANNER_HOME = tool 'Sonarqube'
+        
     }
 
     stages {
@@ -20,6 +22,13 @@ pipeline {
             steps {
                 // Étape pour construire le projet avec Maven
                 sh 'mvn clean install'
+            }
+        }
+         stage('Analyse SonarQube') {
+            steps {
+                script {
+                    sh "mvn clean verify sonar:sonar -Dsonar.projectKey=untilied -Dsonar.projectName='untilied' -Dsonar.host.url=http://192.168.1.8:9000 -Dsonar.token=sqp_5408f76c6604eb0643bf7de01e5e8054b12ae1f7"
+                }
             }
         }
     }
