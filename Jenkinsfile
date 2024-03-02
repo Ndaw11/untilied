@@ -9,7 +9,7 @@ pipeline {
         stage('Verification github') {
             steps {
                 // Étape pour récupérer le code source depuis Git
-                git url: 'github.com/Ndaw11/untilied.git', branch: 'main'
+                git url: 'https://github.com/Ndaw11/untilied.git', branch: 'main'
             }
         }
         
