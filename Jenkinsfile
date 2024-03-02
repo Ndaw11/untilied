@@ -1,9 +1,11 @@
 
 pipeline {
     agent any
+     environment {
     tools {
-        maven 'maven-3.9.6'
-       
+     MAVEN_HOME = tool 'maven-3.9.6'
+    PATH = "${MAVEN_HOME}/bin:${env.PATH}"
+          }
     }
     stages {
         stage('Verification github') {
@@ -19,6 +21,7 @@ pipeline {
                 sh 'mvn clean install'
             }
         }
+        
        
     }
     
