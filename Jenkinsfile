@@ -17,7 +17,7 @@ pipeline {
         NEXUS_REPOSITORY = "untilied1"
         // Identifiant d'identification Jenkins pour s'authentifier auprès de Nexus OSS
         NEXUS_CREDENTIAL_ID = "nexus"
-        ARTIFACT_VERSION = "${BUILD_NUMBER}"
+        COMMON_VERSION = "${BUILD_NUMBER}"
     }
 
     stages {
@@ -41,52 +41,44 @@ pipeline {
                 }
             }
         }
+
         stage('Télécharger le projet d\'artefact sur Nexus Repository Manager') {
-    steps {
-        script {
-            // Lisez le fichier XML POM à l'aide de l'étape 'readMavenPom'
-            pom = readMavenPom file: "pom.xml";
+            steps {
+                script {
+                    pom = readMavenPom file: "pom.xml"
+                    filesByGlob = findFiles(glob: "target/*.${pom.packaging}")
 
-            // Rechercher l'artefact construit dans le dossier cible
-            filesByGlob = findFiles(glob: "target/*.${pom.packaging}");
+                    echo "${filesByGlob[0].name} ${filesByGlob[0].path} ${filesByGlob[0].directory} ${filesByGlob[0].length} ${filesByGlob[0].lastModified}"
 
-            // Imprimez quelques informations sur l'artefact trouvé
-            echo "${filesByGlob[0].name} ${filesByGlob[0].path} ${filesByGlob[0].directory} ${filesByGlob[0].length} ${filesByGlob[0].lastModified}"
+                    artifactPath = filesByGlob[0].path
+                    artifactExists = fileExists artifactPath
 
-            // Extraire le chemin du fichier trouvé
-            artifactPath = filesByGlob[0].path;
+                    if (artifactExists) {
+                        echo "*** File: ${artifactPath}, group: ${pom.groupId}, packaging: ${pom.packaging}, version ${pom.version}"
 
-            // Attribuer à une réponse booléenne vérifiant si le nom de l'artefact existe
-            artifactExists = fileExists artifactPath;
-
-            if (artifactExists) {
-                echo "*** File: ${artifactPath}, group: ${pom.groupId}, packaging: ${pom.packaging}, version ${pom.version}";
-
-                nexusArtifactUploader(
-                    nexusVersion: NEXUS_VERSION,
-                    protocol: NEXUS_PROTOCOL,
-                    nexusUrl: NEXUS_URL,
-                    groupId: pom.groupId,
-                    version: pom.version, // Utiliser pom.version au lieu de ARTIFACT_VERSION
-                    repository: NEXUS_REPOSITORY,
-                    credentialsId: NEXUS_CREDENTIAL_ID,
-                    artifacts: [
-                        // Artefact généré tel que les fichiers .jar, .ear et .war.
-                        // Mais dans notre cas, on a un .jar
-                        [
-                            artifactId: pom.artifactId,
-                            classifier: '',
-                            file: artifactPath,
-                            type: pom.packaging
-                        ]
-                    ]
-                );
-            } else {
-                error "*** File: ${artifactPath}, could not be found";
+                        nexusArtifactUploader(
+                            nexusVersion: NEXUS_VERSION,
+                            protocol: NEXUS_PROTOCOL,
+                            nexusUrl: NEXUS_URL,
+                            groupId: pom.groupId,
+                            version: COMMON_VERSION,
+                            repository: NEXUS_REPOSITORY,
+                            credentialsId: NEXUS_CREDENTIAL_ID,
+                            artifacts: [
+                                [
+                                    artifactId: pom.artifactId,
+                                    classifier: '',
+                                    file: artifactPath,
+                                    type: pom.packaging
+                                ]
+                            ]
+                        )
+                    } else {
+                        error "*** File: ${artifactPath}, could not be found"
+                    }
+                }
             }
         }
-    }
-}
 
     }
 
